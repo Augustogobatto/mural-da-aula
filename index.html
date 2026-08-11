@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Shantell+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --papel: oklch(0.955 0.02 90);          /* fundo: papel kraft claro */
@@ -112,6 +113,19 @@
     button:disabled { opacity: 0.55; cursor: wait; transform: none; }
     button.erro { background: var(--alfinete); }
 
+    /* ---------- login / sessão ---------- */
+    .aviso { font-size: 0.9rem; font-weight: 600; margin-top: 14px; }
+    .usuario {
+      font-size: 0.82rem; font-weight: 700; color: var(--tinta-suave);
+      margin-bottom: 20px; transform: rotate(-0.3deg);
+    }
+    button.sair {
+      background: none; color: var(--tinta-suave); box-shadow: none;
+      padding: 0; font-size: 0.82rem; font-weight: 700;
+      text-decoration: underline; transform: none; border-radius: 0;
+    }
+    button.sair:hover { color: var(--alfinete); transform: none; box-shadow: none; }
+
     /* ---------- notas ---------- */
     .mural-titulo {
       font-size: 0.85rem; font-weight: 800; text-transform: uppercase;
@@ -181,16 +195,36 @@
       </div>
     </header>
 
-    <form id="form">
-      <label for="nome">Seu nome</label>
-      <input id="nome" maxlength="40" required placeholder="Como você quer aparecer no mural">
-      <label for="mensagem">Recado</label>
-      <textarea id="mensagem" maxlength="280" required placeholder="Escreve aí..."></textarea>
-      <button type="submit" id="btn">📌 Pregar no mural</button>
-    </form>
+    <!-- portão de entrada: só a turma passa -->
+    <div id="portao" hidden>
+      <form id="form-login">
+        <label for="email">Entrar no mural (só emails da turma)</label>
+        <input id="email" type="email" required placeholder="seu@email.com">
+        <button type="submit" id="btn-login">✉️ Me manda o link mágico</button>
+        <p class="aviso" id="aviso-login" hidden></p>
+      </form>
+    </div>
 
-    <p class="mural-titulo">Recados da turma</p>
-    <div id="lista"><p class="vazio">Carregando recados...</p></div>
+    <!-- logado, mas fora da lista -->
+    <div id="negado" hidden>
+      <p class="vazio">🚫 O email <b id="email-negado"></b> não está na lista da turma.<br>
+      Fala com o professor pra entrar! &nbsp;<button class="sair" id="btn-sair-negado">tentar outro email</button></p>
+    </div>
+
+    <!-- o mural em si: só logado e aprovado -->
+    <div id="app" hidden>
+      <p class="usuario">📎 Logado como <span id="quem"></span> &nbsp;<button class="sair" id="btn-sair">sair</button></p>
+      <form id="form">
+        <label for="nome">Seu nome</label>
+        <input id="nome" maxlength="40" required placeholder="Como você quer aparecer no mural">
+        <label for="mensagem">Recado</label>
+        <textarea id="mensagem" maxlength="280" required placeholder="Escreve aí..."></textarea>
+        <button type="submit" id="btn">📌 Pregar no mural</button>
+      </form>
+
+      <p class="mural-titulo">Recados da turma</p>
+      <div id="lista"><p class="vazio">Carregando recados...</p></div>
+    </div>
 
     <footer>Prova de conceito da aula do <a href="https://instagram.com/augustogobatto" target="_blank">Augusto Gobatto</a> — GitHub + Vercel + Supabase operados pelo Claude Code.</footer>
   </div>
@@ -198,15 +232,59 @@
   <script>
     const SUPABASE_URL = "https://cgxmmpirlcqjgzzvrdub.supabase.co";
     const SUPABASE_KEY = "sb_publishable_IetxC3NfR3LehOwBNlqtoQ_jo10IQ0U"; // chave pública (pode ficar no site)
-    const HEADERS = { "apikey": SUPABASE_KEY, "Content-Type": "application/json" };
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const el = id => document.getElementById(id);
+    function mostrar(tela) { ["portao", "negado", "app"].forEach(t => el(t).hidden = (t !== tela)); }
 
     let idsNoMural = "";           // assinatura do que já está desenhado
     let vistos = new Set();        // ids que já entraram (pra animar só os novos)
     let primeiraCarga = true;
+    let poller = null;
+
+    /* --- portão: reage a login/logout (inclusive à volta do link mágico) --- */
+    sb.auth.onAuthStateChange((_evento, sessao) => { setTimeout(() => atualizarTela(sessao), 0); });
+
+    async function atualizarTela(sessao) {
+      if (!sessao) { pararPolling(); mostrar("portao"); return; }
+      // aprovado? (RLS: cada um só enxerga a própria linha da lista)
+      const { data, error } = await sb.from("emails_aprovados").select("email").limit(1);
+      if (error || !data || !data.length) {
+        pararPolling();
+        el("email-negado").textContent = sessao.user.email;
+        mostrar("negado");
+        return;
+      }
+      el("quem").textContent = sessao.user.email;
+      mostrar("app");
+      carregar();
+      if (!poller) poller = setInterval(carregar, 5000); // recado dos colegas aparece sozinho a cada 5s
+    }
+    function pararPolling() { if (poller) { clearInterval(poller); poller = null; } }
+
+    el("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = el("btn-login"), aviso = el("aviso-login");
+      btn.disabled = true; btn.textContent = "Enviando...";
+      const email = el("email").value.trim().toLowerCase();
+      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
+      aviso.hidden = false;
+      if (error) {
+        aviso.textContent = "😕 Não consegui enviar o link. Tenta de novo em instantes.";
+        btn.disabled = false; btn.textContent = "✉️ Me manda o link mágico";
+      } else {
+        aviso.textContent = "📬 Link mágico enviado! Abre teu email e clica nele pra entrar.";
+        btn.textContent = "✉️ Link enviado";
+      }
+    });
+
+    const sair = async () => { await sb.auth.signOut(); location.reload(); };
+    el("btn-sair").addEventListener("click", sair);
+    el("btn-sair-negado").addEventListener("click", sair);
 
     async function carregar() {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/recados?select=*&order=criado_em.desc&limit=60`, { headers: HEADERS });
-      const recados = await r.json();
+      const { data: recados, error } = await sb.from("recados").select("*").order("criado_em", { ascending: false }).limit(60);
+      if (error || !recados) return;
       const lista = document.getElementById("lista");
       if (!recados.length) {
         if (idsNoMural !== "vazio") {
@@ -244,15 +322,11 @@
       btn.disabled = true; btn.textContent = "Pregando...";
       let deuCerto = false;
       try {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/recados`, {
-          method: "POST",
-          headers: HEADERS,
-          body: JSON.stringify({
-            nome: document.getElementById("nome").value.trim(),
-            mensagem: document.getElementById("mensagem").value.trim()
-          })
+        const { error } = await sb.from("recados").insert({
+          nome: document.getElementById("nome").value.trim(),
+          mensagem: document.getElementById("mensagem").value.trim()
         });
-        deuCerto = r.ok;
+        deuCerto = !error;
       } catch (_) { /* rede caiu — trata como falha */ }
       if (deuCerto) {
         document.getElementById("mensagem").value = "";
@@ -270,8 +344,6 @@
       }
     });
 
-    carregar();
-    setInterval(carregar, 5000); // recado dos colegas aparece sozinho a cada 5s
   </script>
 </body>
 </html>
