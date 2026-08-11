@@ -199,21 +199,38 @@
     const SUPABASE_KEY = "sb_publishable_IetxC3NfR3LehOwBNlqtoQ_jo10IQ0U"; // chave pública (pode ficar no site)
     const HEADERS = { "apikey": SUPABASE_KEY, "Content-Type": "application/json" };
 
+    let idsNoMural = "";           // assinatura do que já está desenhado
+    let vistos = new Set();        // ids que já entraram (pra animar só os novos)
+    let primeiraCarga = true;
+
     async function carregar() {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/recados?select=*&order=criado_em.desc&limit=60`, { headers: HEADERS });
       const recados = await r.json();
       const lista = document.getElementById("lista");
       if (!recados.length) {
-        lista.innerHTML = '<p class="vazio">Nenhum recado ainda.<br>Seja o primeiro a pregar um! 📌</p>';
+        if (idsNoMural !== "vazio") {
+          lista.innerHTML = '<p class="vazio">Nenhum recado ainda.<br>Seja o primeiro a pregar um! 📌</p>';
+          idsNoMural = "vazio";
+        }
         return;
       }
-      lista.innerHTML = recados.map((rec, i) => `
-        <div class="nota cor-${rec.id % 5}" style="animation-delay:${Math.min(i, 10) * 60}ms">
+      const assinatura = recados.map(r => r.id).join(",");
+      if (assinatura === idsNoMural) return;   // nada mudou → não mexe no mural
+      idsNoMural = assinatura;
+
+      let novosAnimados = 0;
+      lista.innerHTML = recados.map((rec, i) => {
+        const animar = primeiraCarga ? `animation-delay:${Math.min(i, 10) * 60}ms`
+          : (!vistos.has(rec.id) ? `animation-delay:${novosAnimados++ * 60}ms` : "animation:none");
+        return `
+        <div class="nota cor-${rec.id % 5}" style="${animar}">
           <span class="nome">${esc(rec.nome)}</span>
           <span class="quando">${new Date(rec.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
           <div class="msg">${esc(rec.mensagem)}</div>
-        </div>
-      `).join("");
+        </div>`;
+      }).join("");
+      recados.forEach(rec => vistos.add(rec.id));
+      primeiraCarga = false;
     }
 
     function esc(s) {
