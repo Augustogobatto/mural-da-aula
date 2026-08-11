@@ -4,75 +4,191 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mural da Aula</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Shantell+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --papel: oklch(0.955 0.02 90);          /* fundo: papel kraft claro */
+      --tinta: oklch(0.32 0.035 55);          /* texto: marrom-café */
+      --tinta-suave: oklch(0.5 0.03 55);
+      --alfinete: oklch(0.55 0.2 27);         /* vermelho de alfinete — acento raro */
+      --cartao: oklch(0.99 0.008 95);
+      --nota-amarela: oklch(0.93 0.085 98);
+      --nota-rosa: oklch(0.91 0.055 20);
+      --nota-azul: oklch(0.92 0.05 235);
+      --nota-verde: oklch(0.93 0.07 145);
+      --nota-laranja: oklch(0.91 0.08 65);
+      --fita: oklch(0.88 0.04 90 / 0.65);
+      --sombra-nota: 2px 6px 14px oklch(0.35 0.04 60 / 0.18);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      font-family: "Shantell Sans", cursive;
+      background:
+        radial-gradient(oklch(0.9 0.025 85) 1px, transparent 1.5px) 0 0 / 22px 22px,
+        var(--papel);
+      color: var(--tinta);
       min-height: 100vh;
-      color: #eaeaea;
-      padding: 40px 16px;
+      padding: clamp(20px, 4vw, 56px) 16px 64px;
+      overflow-x: hidden;
     }
-    .container { max-width: 640px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 4px; }
-    .subtitulo { color: #9aa5b1; margin-bottom: 28px; font-size: 0.95rem; }
-    .stack { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
-    .badge {
-      font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;
-      border: 1px solid #3b4a5f; color: #b8c4d0;
+    .quadro { max-width: 880px; margin: 0 auto; }
+
+    /* ---------- cabeçalho ---------- */
+    header { position: relative; margin-bottom: clamp(28px, 5vw, 48px); }
+    .fita-titulo {
+      position: absolute; top: -14px; left: -8px;
+      width: 110px; height: 28px; background: var(--fita);
+      transform: rotate(-5deg);
+      box-shadow: 0 1px 3px oklch(0.35 0.04 60 / 0.12);
     }
+    h1 {
+      font-family: "Alfa Slab One", serif;
+      font-weight: 400;
+      font-size: clamp(2.2rem, 7vw, 3.6rem);
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+      transform: rotate(-1deg);
+    }
+    h1 .pino-titulo { color: var(--alfinete); }
+    .subtitulo {
+      margin-top: 10px; max-width: 46ch;
+      font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+      font-weight: 500; color: var(--tinta-suave); line-height: 1.65;
+    }
+    .selos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .selo {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      padding: 5px 12px; background: var(--cartao);
+      border: 1.5px solid var(--tinta); border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--tinta);
+    }
+    .selo:nth-child(odd) { transform: rotate(-1.5deg); }
+    .selo:nth-child(even) { transform: rotate(1.2deg); }
+
+    /* ---------- formulário: ficha pautada ---------- */
     form {
-      background: #0f1626; border: 1px solid #2a3650; border-radius: 12px;
-      padding: 20px; margin-bottom: 28px;
+      position: relative;
+      background:
+        repeating-linear-gradient(transparent 0 27px, oklch(0.85 0.03 235 / 0.35) 27px 28px),
+        var(--cartao);
+      border-radius: 3px;
+      box-shadow: var(--sombra-nota);
+      padding: 26px 22px 22px;
+      margin-bottom: clamp(36px, 6vw, 56px);
+      transform: rotate(0.4deg);
+      max-width: 560px;
     }
-    label { display: block; font-size: 0.85rem; color: #9aa5b1; margin-bottom: 6px; }
+    form::before {
+      content: ""; position: absolute; top: -12px; left: 50%;
+      width: 96px; height: 26px; background: var(--fita);
+      transform: translateX(-50%) rotate(-2deg);
+      box-shadow: 0 1px 3px oklch(0.35 0.04 60 / 0.12);
+    }
+    label {
+      display: block; font-size: 0.8rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--tinta-suave); margin-bottom: 4px;
+    }
     input, textarea {
-      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #3b4a5f;
-      background: #1a2439; color: #eaeaea; font-size: 1rem; margin-bottom: 14px;
-      font-family: inherit;
+      width: 100%; border: none; border-bottom: 2px dashed oklch(0.7 0.03 60);
+      background: transparent; font-family: inherit; font-weight: 500;
+      font-size: 1.05rem; color: var(--tinta);
+      padding: 4px 2px 6px; margin-bottom: 20px;
     }
-    input:focus, textarea:focus { outline: 2px solid #4f7cff; border-color: transparent; }
-    textarea { resize: vertical; min-height: 70px; }
+    input:focus, textarea:focus { outline: none; border-bottom-color: var(--alfinete); }
+    input::placeholder, textarea::placeholder { color: oklch(0.68 0.02 60); font-weight: 400; }
+    textarea { resize: vertical; min-height: 58px; line-height: 28px; }
     button {
-      background: #4f7cff; color: white; border: none; padding: 12px 24px;
-      border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
-      transition: background 0.15s;
+      font-family: inherit; font-weight: 800; font-size: 1rem;
+      background: var(--tinta); color: var(--papel);
+      border: none; border-radius: 999px; padding: 12px 28px;
+      cursor: pointer; transform: rotate(-1deg);
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s;
+      box-shadow: 3px 3px 0 oklch(0.32 0.035 55 / 0.25);
     }
-    button:hover { background: #3d63d8; }
-    button:disabled { background: #3b4a5f; cursor: wait; }
-    .recado {
-      background: #0f1626; border: 1px solid #2a3650; border-radius: 12px;
-      padding: 16px 20px; margin-bottom: 12px;
-      animation: entrar 0.3s ease;
+    button:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 4px 5px 0 oklch(0.32 0.035 55 / 0.25); }
+    button:disabled { opacity: 0.55; cursor: wait; transform: none; }
+
+    /* ---------- notas ---------- */
+    .mural-titulo {
+      font-size: 0.85rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--tinta-suave); margin-bottom: 18px;
     }
-    @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    .recado .nome { font-weight: 700; color: #7ea2ff; }
-    .recado .quando { font-size: 0.75rem; color: #6b7787; margin-left: 8px; }
-    .recado .msg { margin-top: 6px; line-height: 1.5; }
-    .vazio { color: #6b7787; text-align: center; padding: 30px; }
-    footer { margin-top: 40px; text-align: center; font-size: 0.8rem; color: #6b7787; }
-    footer a { color: #7ea2ff; text-decoration: none; }
+    #lista { columns: 3 220px; column-gap: 18px; }
+    .nota {
+      break-inside: avoid; position: relative;
+      padding: 30px 18px 18px; margin: 0 0 18px;
+      box-shadow: var(--sombra-nota);
+      border-radius: 2px;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      animation: pregar 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+    }
+    .nota:hover { transform: rotate(0deg) scale(1.02); }
+    .nota::before { /* alfinete */
+      content: ""; position: absolute; top: 10px; left: 50%;
+      width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, oklch(0.75 0.16 27), var(--alfinete) 60%, oklch(0.4 0.16 27));
+      box-shadow: 0 2px 3px oklch(0.35 0.04 60 / 0.35);
+    }
+    .nota .nome { font-weight: 800; font-size: 1rem; }
+    .nota .quando { display: block; font-size: 0.68rem; font-weight: 500; color: oklch(0.45 0.03 60 / 0.75); margin-top: 1px; }
+    .nota .msg { margin-top: 8px; font-weight: 500; font-size: 0.98rem; line-height: 1.5; overflow-wrap: break-word; }
+    .cor-0 { background: var(--nota-amarela); transform: rotate(-1.6deg); }
+    .cor-1 { background: var(--nota-rosa); transform: rotate(1.3deg); }
+    .cor-2 { background: var(--nota-azul); transform: rotate(-0.8deg); }
+    .cor-3 { background: var(--nota-verde); transform: rotate(1.8deg); }
+    .cor-4 { background: var(--nota-laranja); transform: rotate(-1.1deg); }
+    @keyframes pregar {
+      from { opacity: 0; transform: scale(0.85) rotate(4deg) translateY(-14px); }
+    }
+    .vazio {
+      font-weight: 500; color: var(--tinta-suave);
+      background: var(--nota-amarela); display: inline-block;
+      padding: 26px 22px 20px; transform: rotate(-1.5deg);
+      box-shadow: var(--sombra-nota); position: relative;
+    }
+
+    footer {
+      margin-top: 56px; font-size: 0.78rem; font-weight: 500;
+      color: var(--tinta-suave); transform: rotate(-0.5deg);
+    }
+    footer a { color: var(--tinta); font-weight: 700; }
+
+    @media (max-width: 520px) {
+      #lista { columns: 2 150px; column-gap: 12px; }
+      .nota { padding: 26px 14px 14px; margin-bottom: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nota { animation: none; }
+      button, .nota { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📌 Mural da Aula</h1>
-    <p class="subtitulo">Deixe seu recado — ele é gravado num banco de dados de verdade, na hora.</p>
-    <div class="stack">
-      <span class="badge">💻 Código no GitHub</span>
-      <span class="badge">🚀 No ar pela Vercel</span>
-      <span class="badge">🗄️ Dados no Supabase</span>
-      <span class="badge">🤖 Feito pelo Claude Code</span>
-    </div>
+  <div class="quadro">
+    <header>
+      <div class="fita-titulo"></div>
+      <h1>Mural da Aula<span class="pino-titulo">.</span></h1>
+      <p class="subtitulo">Deixe seu recado — ele vai direto pra um banco de dados de verdade e aparece no mural de todo mundo.</p>
+      <div class="selos">
+        <span class="selo">CÓDIGO NO GITHUB</span>
+        <span class="selo">NO AR PELA VERCEL</span>
+        <span class="selo">DADOS NO SUPABASE</span>
+        <span class="selo">FEITO PELO CLAUDE CODE</span>
+      </div>
+    </header>
 
     <form id="form">
       <label for="nome">Seu nome</label>
       <input id="nome" maxlength="40" required placeholder="Como você quer aparecer no mural">
       <label for="mensagem">Recado</label>
       <textarea id="mensagem" maxlength="280" required placeholder="Escreve aí..."></textarea>
-      <button type="submit" id="btn">Publicar no mural</button>
+      <button type="submit" id="btn">📌 Pregar no mural</button>
     </form>
 
+    <p class="mural-titulo">Recados da turma</p>
     <div id="lista"><p class="vazio">Carregando recados...</p></div>
 
     <footer>Prova de conceito da aula do <a href="https://instagram.com/augustogobatto" target="_blank">Augusto Gobatto</a> — GitHub + Vercel + Supabase operados pelo Claude Code.</footer>
@@ -84,17 +200,17 @@
     const HEADERS = { "apikey": SUPABASE_KEY, "Content-Type": "application/json" };
 
     async function carregar() {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/recados?select=*&order=criado_em.desc&limit=50`, { headers: HEADERS });
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/recados?select=*&order=criado_em.desc&limit=60`, { headers: HEADERS });
       const recados = await r.json();
       const lista = document.getElementById("lista");
       if (!recados.length) {
-        lista.innerHTML = '<p class="vazio">Nenhum recado ainda. Seja o primeiro!</p>';
+        lista.innerHTML = '<p class="vazio">Nenhum recado ainda.<br>Seja o primeiro a pregar um! 📌</p>';
         return;
       }
-      lista.innerHTML = recados.map(rec => `
-        <div class="recado">
+      lista.innerHTML = recados.map((rec, i) => `
+        <div class="nota cor-${rec.id % 5}" style="animation-delay:${Math.min(i, 10) * 60}ms">
           <span class="nome">${esc(rec.nome)}</span>
-          <span class="quando">${new Date(rec.criado_em).toLocaleString("pt-BR")}</span>
+          <span class="quando">${new Date(rec.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
           <div class="msg">${esc(rec.mensagem)}</div>
         </div>
       `).join("");
@@ -107,7 +223,7 @@
     document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const btn = document.getElementById("btn");
-      btn.disabled = true; btn.textContent = "Publicando...";
+      btn.disabled = true; btn.textContent = "Pregando...";
       await fetch(`${SUPABASE_URL}/rest/v1/recados`, {
         method: "POST",
         headers: HEADERS,
@@ -117,12 +233,12 @@
         })
       });
       document.getElementById("mensagem").value = "";
-      btn.disabled = false; btn.textContent = "Publicar no mural";
+      btn.disabled = false; btn.textContent = "📌 Pregar no mural";
       carregar();
     });
 
     carregar();
-    setInterval(carregar, 5000); // atualiza sozinho a cada 5s — recado dos colegas aparece "ao vivo"
+    setInterval(carregar, 5000); // recado dos colegas aparece sozinho a cada 5s
   </script>
 </body>
 </html>
