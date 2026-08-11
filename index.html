@@ -110,6 +110,7 @@
     }
     button:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 4px 5px 0 oklch(0.32 0.035 55 / 0.25); }
     button:disabled { opacity: 0.55; cursor: wait; transform: none; }
+    button.erro { background: var(--alfinete); }
 
     /* ---------- notas ---------- */
     .mural-titulo {
@@ -241,17 +242,32 @@
       e.preventDefault();
       const btn = document.getElementById("btn");
       btn.disabled = true; btn.textContent = "Pregando...";
-      await fetch(`${SUPABASE_URL}/rest/v1/recados`, {
-        method: "POST",
-        headers: HEADERS,
-        body: JSON.stringify({
-          nome: document.getElementById("nome").value.trim(),
-          mensagem: document.getElementById("mensagem").value.trim()
-        })
-      });
-      document.getElementById("mensagem").value = "";
-      btn.disabled = false; btn.textContent = "📌 Pregar no mural";
-      carregar();
+      let deuCerto = false;
+      try {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/recados`, {
+          method: "POST",
+          headers: HEADERS,
+          body: JSON.stringify({
+            nome: document.getElementById("nome").value.trim(),
+            mensagem: document.getElementById("mensagem").value.trim()
+          })
+        });
+        deuCerto = r.ok;
+      } catch (_) { /* rede caiu — trata como falha */ }
+      if (deuCerto) {
+        document.getElementById("mensagem").value = "";
+        btn.disabled = false; btn.textContent = "📌 Pregar no mural";
+        carregar();
+      } else {
+        // mensagem fica no textarea — só avisa que não colou
+        btn.disabled = false;
+        btn.classList.add("erro");
+        btn.textContent = "😕 Não colou! Tenta de novo";
+        setTimeout(() => {
+          btn.classList.remove("erro");
+          btn.textContent = "📌 Pregar no mural";
+        }, 2500);
+      }
     });
 
     carregar();
