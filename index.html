@@ -284,14 +284,14 @@
       const email = el("email").value.trim().toLowerCase();
       const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
       aviso.hidden = false;
-      if (error) {
-        aviso.textContent = /lista da turma/i.test(error.message || "")
-          ? "🚫 Esse email não está na lista da turma — fala com o professor!"
-          : "😕 Não consegui enviar o link. Tenta de novo em instantes.";
+      // mesma resposta pra qualquer email — ninguém descobre quem está na lista
+      if (error && !/lista da turma/i.test(error.message || "")) {
+        // erro técnico de verdade (rede, limite de envio) — pode tentar de novo
+        aviso.textContent = "😕 Não consegui enviar. Tenta de novo em instantes.";
         btn.disabled = false; btn.textContent = "✉️ Me manda o link mágico";
       } else {
-        aviso.textContent = "📬 Link mágico enviado! Abre teu email e clica nele pra entrar.";
-        btn.textContent = "✉️ Link enviado";
+        aviso.textContent = "📬 Se você for aluno do Push Club, você receberá o magic link no seu email.";
+        btn.textContent = "✉️ Enviado";
       }
     });
 
