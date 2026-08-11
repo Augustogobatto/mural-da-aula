@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mural da Aula</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #eaeaea;
+      padding: 40px 16px;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 4px; }
+    .subtitulo { color: #9aa5b1; margin-bottom: 28px; font-size: 0.95rem; }
+    .stack { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+    .badge {
+      font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;
+      border: 1px solid #3b4a5f; color: #b8c4d0;
+    }
+    form {
+      background: #0f1626; border: 1px solid #2a3650; border-radius: 12px;
+      padding: 20px; margin-bottom: 28px;
+    }
+    label { display: block; font-size: 0.85rem; color: #9aa5b1; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #3b4a5f;
+      background: #1a2439; color: #eaeaea; font-size: 1rem; margin-bottom: 14px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus { outline: 2px solid #4f7cff; border-color: transparent; }
+    textarea { resize: vertical; min-height: 70px; }
+    button {
+      background: #4f7cff; color: white; border: none; padding: 12px 24px;
+      border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #3d63d8; }
+    button:disabled { background: #3b4a5f; cursor: wait; }
+    .recado {
+      background: #0f1626; border: 1px solid #2a3650; border-radius: 12px;
+      padding: 16px 20px; margin-bottom: 12px;
+      animation: entrar 0.3s ease;
+    }
+    @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .recado .nome { font-weight: 700; color: #7ea2ff; }
+    .recado .quando { font-size: 0.75rem; color: #6b7787; margin-left: 8px; }
+    .recado .msg { margin-top: 6px; line-height: 1.5; }
+    .vazio { color: #6b7787; text-align: center; padding: 30px; }
+    footer { margin-top: 40px; text-align: center; font-size: 0.8rem; color: #6b7787; }
+    footer a { color: #7ea2ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📌 Mural da Aula</h1>
+    <p class="subtitulo">Deixe seu recado — ele é gravado num banco de dados de verdade, na hora.</p>
+    <div class="stack">
+      <span class="badge">💻 Código no GitHub</span>
+      <span class="badge">🚀 No ar pela Vercel</span>
+      <span class="badge">🗄️ Dados no Supabase</span>
+      <span class="badge">🤖 Feito pelo Claude Code</span>
+    </div>
+
+    <form id="form">
+      <label for="nome">Seu nome</label>
+      <input id="nome" maxlength="40" required placeholder="Como você quer aparecer no mural">
+      <label for="mensagem">Recado</label>
+      <textarea id="mensagem" maxlength="280" required placeholder="Escreve aí..."></textarea>
+      <button type="submit" id="btn">Publicar no mural</button>
+    </form>
+
+    <div id="lista"><p class="vazio">Carregando recados...</p></div>
+
+    <footer>Prova de conceito da aula do <a href="https://instagram.com/augustogobatto" target="_blank">Augusto Gobatto</a> — GitHub + Vercel + Supabase operados pelo Claude Code.</footer>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://cgxmmpirlcqjgzzvrdub.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_IetxC3NfR3LehOwBNlqtoQ_jo10IQ0U"; // chave pública (pode ficar no site)
+    const HEADERS = { "apikey": SUPABASE_KEY, "Content-Type": "application/json" };
+
+    async function carregar() {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/recados?select=*&order=criado_em.desc&limit=50`, { headers: HEADERS });
+      const recados = await r.json();
+      const lista = document.getElementById("lista");
+      if (!recados.length) {
+        lista.innerHTML = '<p class="vazio">Nenhum recado ainda. Seja o primeiro!</p>';
+        return;
+      }
+      lista.innerHTML = recados.map(rec => `
+        <div class="recado">
+          <span class="nome">${esc(rec.nome)}</span>
+          <span class="quando">${new Date(rec.criado_em).toLocaleString("pt-BR")}</span>
+          <div class="msg">${esc(rec.mensagem)}</div>
+        </div>
+      `).join("");
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("btn");
+      btn.disabled = true; btn.textContent = "Publicando...";
+      await fetch(`${SUPABASE_URL}/rest/v1/recados`, {
+        method: "POST",
+        headers: HEADERS,
+        body: JSON.stringify({
+          nome: document.getElementById("nome").value.trim(),
+          mensagem: document.getElementById("mensagem").value.trim()
+        })
+      });
+      document.getElementById("mensagem").value = "";
+      btn.disabled = false; btn.textContent = "Publicar no mural";
+      carregar();
+    });
+
+    carregar();
+    setInterval(carregar, 5000); // atualiza sozinho a cada 5s — recado dos colegas aparece "ao vivo"
+  </script>
+</body>
+</html>
